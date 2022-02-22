@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Windows.Media;
 using System.Windows.Threading;
 using EnvDTE;
 using Microsoft.VisualStudio;
@@ -14,7 +13,8 @@ namespace VSDocBar
 {
     // for IVsRunningDocTableEvents, v3 derives from v2 which derives from v1, so don't need to speify v1 or v2.  From v4 on
     // they do not derive from the earlier versions and so are all specified.
-    internal class VSDocBarToolWindowControlViewModel : ViewModelBase, IVsRunningDocTableEvents3, IVsRunningDocTableEvents4, IVsRunningDocTableEvents5, IVsRunningDocTableEvents6
+    internal class VSDocBarToolWindowControlViewModel : ViewModelBase, IVsRunningDocTableEvents3, IVsRunningDocTableEvents4, 
+        IVsRunningDocTableEvents5, IVsRunningDocTableEvents6
     {
         private ObservableCollection<ObservableItemBase> _openDocList = new ObservableCollection<ObservableItemBase>();
         public ObservableCollection<ObservableItemBase> OpenDocList
@@ -38,21 +38,18 @@ namespace VSDocBar
         }
 
         private const string _logPrefix = @"VSDocBar: ";
-        private uint _logIdx = 0;
+        private uint _logIdx;
         protected void Log(string s)
         {
             Debug.WriteLine(_logPrefix + "(" + _logIdx.ToString("D3") + ") " + s ?? "null");
             _logIdx++;
         }
 
-        public VSDocBarToolWindowControlViewModel()
-        {
-        }
-
         private IVsRunningDocumentTable _rdt;
         private IVsUIShellOpenDocument _sod;
         private DTE _dte;
         private bool _active;
+        private const double _updateCheckIntervalMs = 500;
 
         #region initialization and shutdown
 
@@ -72,7 +69,7 @@ namespace VSDocBar
 
             // timer is used to periodically update, batching update requests together
             _updateTimer = new DispatcherTimer();
-            _updateTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _updateTimer.Interval = TimeSpan.FromMilliseconds(_updateCheckIntervalMs);
             _updateTimer.Tick += UpdateIfNeeded;
             _updateTimer.Start();
         }
@@ -155,11 +152,13 @@ namespace VSDocBar
 
         #region update
 
-        private int _updateRequestedRev = 0;
-        private int _updateExecutedRev = 0;
+        private int _updateRequestedRev;
+        private int _updateExecutedRev;
         private DispatcherTimer _updateTimer;
 
-        private HashSet<string> _collapsedProjects = new HashSet<string>();
+        private readonly HashSet<string> _collapsedProjects = new HashSet<string>();
+
+        private const double _pointsToPixels = 96.0 / 72.0;
 
         private void UpdateFont()
         {
@@ -174,7 +173,7 @@ namespace VSDocBar
             {
                 var szPoints = (System.Int16)prop.Value;
                 // need to convert from points to WPF pixels
-                FontSize = (int)(((double)szPoints * (96.0 / 72.0)) + 0.5);
+                FontSize = (int)Math.Round((double)szPoints * _pointsToPixels);
             }
 
             prop = plist.Item("FontFamily") as Property;
@@ -200,8 +199,6 @@ namespace VSDocBar
             if (_updateExecutedRev == _updateRequestedRev)
                 return;
             _updateExecutedRev = _updateRequestedRev;
-
-            //Log("updating...");
 
             UpdateFont();
 
@@ -246,27 +243,27 @@ namespace VSDocBar
                 newOpenDocList.Add(new ObservableProject { ProjectName = projectName });
 
                 // only consider project files if the project is NOT collapsed
-                if (!_collapsedProjects.Contains(projectName))
-                {
-                    // sort files also (again, for repeatable order and easier visual lookup)
-                    var docFieldsList = projectDocsMap[projectName];
-                    docFieldsList.Sort((a, b) => string.Compare(a.DocCaption,b.DocCaption));
+                if (_collapsedProjects.Contains(projectName))
+                    continue;
 
-                    // for all docs in this project
-                    foreach (var docFields in docFieldsList)
+                // sort files also (again, for repeatable order and easier visual lookup)
+                var docFieldsList = projectDocsMap[projectName];
+                docFieldsList.Sort((a, b) => string.Compare(a.DocCaption,b.DocCaption));
+
+                // for all docs in this project
+                foreach (var docFields in docFieldsList)
+                {
+                    // add a doc item
+                    var doc = new ObservableOpenDoc
                     {
-                        // add a doc item
-                        var doc = new ObservableOpenDoc
-                        {
-                            ProjectName = projectName,
-                            FileName = docFields.DocCaption,
-                            IsActive = (docFields.DocCookie == _activeDocCookie),
-                            DF = docFields
-                        };
-                        newOpenDocList.Add(doc);
-                        if (doc.IsActive)
-                            Log($"update: set active doc, {doc.FileName}, {doc.DF.DocCookie}");
-                    }
+                        ProjectName = projectName,
+                        FileName = docFields.DocCaption,
+                        IsActive = (docFields.DocCookie == _activeDocCookie),
+                        DF = docFields
+                    };
+                    newOpenDocList.Add(doc);
+                    if (doc.IsActive)
+                        Log($"update: set active doc, {doc.FileName}, {doc.DF.DocCookie}");
                 }
             }
 
@@ -297,16 +294,18 @@ namespace VSDocBar
 
         #region IVsRunningDocTableEvents3
 
-        private uint _activeDocCookie = 0;
+        private uint _activeDocCookie;
 
-        int IVsRunningDocTableEvents.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents3.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents3.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
@@ -343,7 +342,8 @@ namespace VSDocBar
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents3.OnAfterAttributeChangeEx(uint docCookie, uint grfAttribs, IVsHierarchy pHierOld, uint itemidOld, string pszMkDocumentOld, IVsHierarchy pHierNew, uint itemidNew, string pszMkDocumentNew)
+        int IVsRunningDocTableEvents3.OnAfterAttributeChangeEx(uint docCookie, uint grfAttribs, IVsHierarchy pHierOld, uint itemidOld, 
+            string pszMkDocumentOld, IVsHierarchy pHierNew, uint itemidNew, string pszMkDocumentNew)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
@@ -357,14 +357,16 @@ namespace VSDocBar
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents3.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents3.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents2.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents2.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
@@ -401,21 +403,24 @@ namespace VSDocBar
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents2.OnAfterAttributeChangeEx(uint docCookie, uint grfAttribs, IVsHierarchy pHierOld, uint itemidOld, string pszMkDocumentOld, IVsHierarchy pHierNew, uint itemidNew, string pszMkDocumentNew)
+        int IVsRunningDocTableEvents2.OnAfterAttributeChangeEx(uint docCookie, uint grfAttribs, IVsHierarchy pHierOld, uint itemidOld, 
+            string pszMkDocumentOld, IVsHierarchy pHierNew, uint itemidNew, string pszMkDocumentNew)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents2.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents2.OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();
             return VSConstants.S_OK;
         }
 
-        int IVsRunningDocTableEvents.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+        int IVsRunningDocTableEvents.OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, 
+            uint dwEditLocksRemaining)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             RequestUpdate();

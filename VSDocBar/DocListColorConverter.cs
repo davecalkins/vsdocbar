@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
@@ -16,7 +15,7 @@ namespace VSDocBar
             return (Color)ColorConverter.ConvertFromString(clr);
         }
 
-        private Color[] _colors =
+        private readonly Color[] _colors =
         {
             // https://www.schemecolor.com/light-pastels.php
             ColorFromHex("#FBB3BD"),
@@ -52,8 +51,10 @@ namespace VSDocBar
         };
 
         // http://www.colorsontheweb.com/color-theory/color-contrast
-        private Color _activeBackgroundColor = ColorFromHex("#0000B8");
-        private Color _activeForegroundColor = ColorFromHex("#F1D700");
+        private readonly Color _activeBackgroundColor = ColorFromHex("#0000B8");
+        private readonly Color _activeForegroundColor = ColorFromHex("#F1D700");
+
+        private const double _projectTitleColorBrightnessScale = 0.8;
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -96,7 +97,7 @@ namespace VSDocBar
 
                     // for the project headings, darken the color slightly
                     if (item is ObservableProject)
-                        color = ColorConversion.ScaleColorBrightness(color, 0.8);
+                        color = ColorConversion.ScaleColorBrightness(color, _projectTitleColorBrightnessScale);
                 }
                 else
                     // foreground is always black; background colors were chosen to ensure readability with this
@@ -108,7 +109,7 @@ namespace VSDocBar
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

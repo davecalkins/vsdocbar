@@ -13,7 +13,7 @@ namespace VSDocBar
     /// </summary>
     public partial class VSDocBarToolWindowControl : UserControl
     {
-        private VSDocBarToolWindowControlViewModel _viewModel;
+        private readonly VSDocBarToolWindowControlViewModel _viewModel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VSDocBarToolWindowControl"/> class.

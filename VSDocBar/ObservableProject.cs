@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -11,7 +8,7 @@ namespace VSDocBar
     /// <summary>
     /// represents a project heading in the list
     /// </summary>
-    internal class ObservableProject : ObservableItemBase, IEquatable<ObservableProject>, IComparable<ObservableProject>
+    internal class ObservableProject : ObservableItemBase, IEquatable<ObservableProject>, IComparable<ObservableProject>, IComparable
     {
         private string _projectName;
         public string ProjectName
@@ -51,6 +48,43 @@ namespace VSDocBar
             if (ReferenceEquals(this, other)) return 0;
             if (ReferenceEquals(null, other)) return 1;
             return string.Compare(_projectName, other._projectName, StringComparison.Ordinal);
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return 1;
+            if (ReferenceEquals(this, obj)) return 0;
+            return obj is ObservableProject other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(ObservableProject)}");
+        }
+
+        public static bool operator <(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) < 0;
+        }
+
+        public static bool operator >(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) > 0;
+        }
+
+        public static bool operator <=(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) <= 0;
+        }
+
+        public static bool operator >=(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) >= 0;
+        }
+
+        public static bool operator ==(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) == 0;
+        }
+
+        public static bool operator !=(ObservableProject left, ObservableProject right)
+        {
+            return Comparer<ObservableProject>.Default.Compare(left, right) != 0;
         }
 
         public override int Compare(ObservableItemBase other)

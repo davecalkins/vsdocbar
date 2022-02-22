@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -11,7 +8,7 @@ namespace VSDocBar
     /// <summary>
     /// represents an open doc in the list
     /// </summary>
-    internal class ObservableOpenDoc : ObservableItemBase, IEquatable<ObservableOpenDoc>, IComparable<ObservableOpenDoc>
+    internal class ObservableOpenDoc : ObservableItemBase, IEquatable<ObservableOpenDoc>, IComparable<ObservableOpenDoc>, IComparable
     {
         private string _projectName;
         public string ProjectName
@@ -82,6 +79,43 @@ namespace VSDocBar
             var fileNameComparison = string.Compare(_fileName, other._fileName, StringComparison.Ordinal);
             if (fileNameComparison != 0) return fileNameComparison;
             return _isActive.CompareTo(other._isActive);
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return 1;
+            if (ReferenceEquals(this, obj)) return 0;
+            return obj is ObservableOpenDoc other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(ObservableOpenDoc)}");
+        }
+
+        public static bool operator <(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) < 0;
+        }
+
+        public static bool operator >(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) > 0;
+        }
+
+        public static bool operator <=(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) <= 0;
+        }
+
+        public static bool operator >=(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) >= 0;
+        }
+
+        public static bool operator ==(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) == 0;
+        }
+
+        public static bool operator !=(ObservableOpenDoc left, ObservableOpenDoc right)
+        {
+            return Comparer<ObservableOpenDoc>.Default.Compare(left, right) != 0;
         }
 
         public override int Compare(ObservableItemBase other)
