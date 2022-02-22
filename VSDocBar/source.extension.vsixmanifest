@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="VSDocBar.c4b73c5f-ee29-4a02-9673-91ebd5a1da79" Version="2022.02.21.1" Language="en-US" Publisher="davecalkins" />
+        <DisplayName>VSDocBar</DisplayName>
+        <Description xml:space="preserve">Shows open docs grouped and color-coded by project, where the color is determined using the project name so is always the same for a given project.  Projects can be collapsed/expanded by clicking them and the font matches the code editor font.</Description>
+        <License>LICENSE.txt</License>
+        <GettingStartedGuide>README.txt</GettingStartedGuide>
+        <ReleaseNotes>README.txt</ReleaseNotes>
+        <Icon>baseline_view_sidebar_black_24dp.png</Icon>
+        <PreviewImage>preview.png</PreviewImage>
+        <Tags>tool-window;open-docs</Tags>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    </Dependencies>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,18.0)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    </Assets>
+</PackageManifest>

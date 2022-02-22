@@ -1,0 +1,77 @@
+﻿<UserControl x:Class="VSDocBar.VSDocBarToolWindowControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vsshell="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:vsDocBar="clr-namespace:VSDocBar"
+             Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
+             Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="300"
+             Name="MyToolWindow">
+
+    <UserControl.Resources>
+
+        <vsDocBar:DocListDataTemplateSelector x:Key="docListDataTemplateSelector" />
+
+        <DataTemplate x:Key="ProjectItemTemplate">
+            <Grid>
+                <Button 
+                    FontStyle="Italic" 
+                    BorderBrush="Black" 
+                    BorderThickness="3" 
+                    Content="{Binding ProjectName}"
+                    Background="{Binding BackgroundColor}"
+                    Foreground="{Binding ForegroundColor}"
+                    FontWeight="{Binding TextFontWeight}" 
+                    Click="OpenDocItemClick" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="OpenDocItemTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.9*" />
+                    <ColumnDefinition Width="0.1*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" 
+                        Content="{Binding FileName}" 
+                        HorizontalContentAlignment="Left"
+                        Click="OpenDocItemClick"
+                        Background="{Binding BackgroundColor}"
+                        Foreground="{Binding ForegroundColor}"
+                        FontWeight="{Binding TextFontWeight}" />
+                <Button Grid.Column="1" 
+                        Content="X" 
+                        Click="OpenDocCloseBtnClick"
+                        Background="{Binding BackgroundColor}"
+                        Foreground="{Binding ForegroundColor}"
+                        FontWeight="{Binding TextFontWeight}" />
+            </Grid>
+        </DataTemplate>
+
+    </UserControl.Resources>
+
+    <Grid Margin="0" >
+
+        <ListView HorizontalContentAlignment="Stretch"
+                  ItemsSource="{Binding OpenDocList}"
+                  ItemTemplateSelector="{StaticResource docListDataTemplateSelector}"
+                  FontSize="{Binding FontSize}"
+                  FontFamily="{Binding FontFamily}"
+                  Background="Black">
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListView.ItemContainerStyle>
+
+        </ListView>
+
+    </Grid>
+
+</UserControl>
