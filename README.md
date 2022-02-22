@@ -1,6 +1,6 @@
 # vsdocbar
 
-Provides a dockable tool window showing the open documents.
+A Visual Studio extension (.vsix) which provides a dockable tool window showing the open documents.
 
 - grouped and color-coded by project
 - colors determined by project name so they're always the same for a given project
