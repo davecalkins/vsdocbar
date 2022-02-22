@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows.Threading;
 using EnvDTE;
@@ -35,14 +34,6 @@ namespace VSDocBar
         {
             get { return _fontFamily; }
             set { SetProperty(ref _fontFamily, value); }
-        }
-
-        private const string _logPrefix = @"VSDocBar: ";
-        private uint _logIdx;
-        protected void Log(string s)
-        {
-            Debug.WriteLine(_logPrefix + "(" + _logIdx.ToString("D3") + ") " + s ?? "null");
-            _logIdx++;
         }
 
         private IVsRunningDocumentTable _rdt;
@@ -262,8 +253,6 @@ namespace VSDocBar
                         DF = docFields
                     };
                     newOpenDocList.Add(doc);
-                    if (doc.IsActive)
-                        Log($"update: set active doc, {doc.FileName}, {doc.DF.DocCookie}");
                 }
             }
 
@@ -330,7 +319,6 @@ namespace VSDocBar
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _activeDocCookie = docCookie;
-            Log($"set active doc cookie={_activeDocCookie}");
             RequestUpdate();
             return VSConstants.S_OK;
         }
@@ -391,7 +379,6 @@ namespace VSDocBar
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _activeDocCookie = docCookie;
-            Log($"set active doc cookie={_activeDocCookie}");
             RequestUpdate();
             return VSConstants.S_OK;
         }
@@ -445,7 +432,6 @@ namespace VSDocBar
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _activeDocCookie = docCookie;
-            Log($"set active doc cookie={_activeDocCookie}");
             RequestUpdate();
             return VSConstants.S_OK;
         }

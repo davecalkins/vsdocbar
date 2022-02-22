@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -155,21 +154,6 @@ namespace VSDocBar
             }
 
             return res;
-        }
-
-        public static void Test()
-        {
-            _VSRDTFLAGS f1 = _VSRDTFLAGS.RDT_ReadLock;
-            Debug.WriteLine(f1.FormatRDTFlags());
-
-            _VSRDTFLAGS f2 = _VSRDTFLAGS.RDT_ReadLock | _VSRDTFLAGS.RDT_EditLock;
-            Debug.WriteLine(f2.FormatRDTFlags());
-
-            __VSRDTATTRIB a1 = __VSRDTATTRIB.RDTA_Hierarchy;
-            Debug.WriteLine(a1.FormatRDTAttrib());
-
-            __VSRDTATTRIB a2 = __VSRDTATTRIB.RDTA_Hierarchy | __VSRDTATTRIB.RDTA_ItemID;
-            Debug.WriteLine(a2.FormatRDTAttrib());
         }
     }
 }
