@@ -153,6 +153,9 @@ namespace VSDocBar
 
         private const double _pointsToPixels = 96.0 / 72.0;
 
+        /// <summary>
+        /// ensure font matches the code editor font
+        /// </summary>
         private void UpdateFont()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -177,12 +180,20 @@ namespace VSDocBar
         }
 
         /// <summary>
+        /// helper class to wrap the nested dictionary for passing around in the update calls
+        /// </summary>
+        private class OpenDocsByProject
+        {
+            public readonly Dictionary<string, List<DocFields>> Data = new Dictionary<string, List<DocFields>>();
+        }
+
+        /// <summary>
         /// retrieve the set of open docs from VS, getting the doc fields
         /// for each and organizing them by project
         /// </summary>
-        private Dictionary<string, List<DocFields>> GetOpenDocsByProject()
+        private OpenDocsByProject GetOpenDocsByProject()
         {
-            var projectDocsMap = new Dictionary<string, List<DocFields>>();
+            var openDocsByProject = new OpenDocsByProject();
 
             var docCookies = _rdt.GetDocs().ToList();
             foreach (var docCookie in docCookies)
@@ -202,27 +213,27 @@ namespace VSDocBar
                     continue;
 
                 List<DocFields> docsForProj;
-                if (!projectDocsMap.TryGetValue(doc.ProjCaption, out docsForProj))
+                if (!openDocsByProject.Data.TryGetValue(doc.ProjCaption, out docsForProj))
                 {
                     docsForProj = new List<DocFields>();
-                    projectDocsMap[doc.ProjCaption] = docsForProj;
+                    openDocsByProject.Data[doc.ProjCaption] = docsForProj;
                 }
                 docsForProj.Add(doc);
             }
 
-            return projectDocsMap;
+            return openDocsByProject;
         }
 
         /// <summary>
         /// build a new item list with the current set of open docs by project which
         /// will be used to update the bound list.
         /// </summary>
-        private List<ObservableItemBase> BuildNewItemList(Dictionary<string, List<DocFields>> projectDocsMap)
+        private List<ObservableItemBase> BuildNewItemList(OpenDocsByProject openDocsByProject)
         {
             var newOpenDocList = new List<ObservableItemBase>();
 
             // get sorted list of project names (so the order is repeatable)
-            var projectNames = projectDocsMap.Keys.ToList();
+            var projectNames = openDocsByProject.Data.Keys.ToList();
             projectNames.Sort();
 
             foreach (var projectName in projectNames)
@@ -235,7 +246,7 @@ namespace VSDocBar
                     continue;
 
                 // sort files also (again, for repeatable order and easier visual lookup)
-                var docFieldsList = projectDocsMap[projectName];
+                var docFieldsList = openDocsByProject.Data[projectName];
                 docFieldsList.Sort((a, b) => string.Compare(a.DocCaption,b.DocCaption));
 
                 // for all docs in this project
@@ -308,10 +319,10 @@ namespace VSDocBar
             UpdateFont();
 
             // get open docs by project
-            var projectDocsMap = GetOpenDocsByProject();
+            var openDocsByProject = GetOpenDocsByProject();
 
             // build the "new" list contents which will be used to update the existing list
-            var newOpenDocList = BuildNewItemList(projectDocsMap);
+            var newOpenDocList = BuildNewItemList(openDocsByProject);
 
             // update bound observable list with the new list contents
             UpdateObservableItemsList(newOpenDocList);
