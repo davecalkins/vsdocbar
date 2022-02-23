@@ -149,6 +149,8 @@ namespace VSDocBar
 
         private readonly HashSet<string> _collapsedProjects = new HashSet<string>();
 
+        #region update helpers
+
         private const double _pointsToPixels = 96.0 / 72.0;
 
         private void UpdateFont()
@@ -174,28 +176,14 @@ namespace VSDocBar
             }
         }
 
-        private void RequestUpdate()
+        /// <summary>
+        /// retrieve the set of open docs from VS, getting the doc fields
+        /// for each and organizing them by project
+        /// </summary>
+        private Dictionary<string, List<DocFields>> GetOpenDocsByProject()
         {
-            _updateRequestedRev++;
-        }
-
-        private void UpdateIfNeeded(object sender, EventArgs e)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            if (!_active)
-                return;
-
-            // only update if there have been update requests since the last update
-            if (_updateExecutedRev == _updateRequestedRev)
-                return;
-            _updateExecutedRev = _updateRequestedRev;
-
-            UpdateFont();
-
-            // retrieve the set of open docs from VS, getting the doc fields
-            // for each and organizing them by project
             var projectDocsMap = new Dictionary<string, List<DocFields>>();
+
             var docCookies = _rdt.GetDocs().ToList();
             foreach (var docCookie in docCookies)
             {
@@ -222,12 +210,21 @@ namespace VSDocBar
                 docsForProj.Add(doc);
             }
 
+            return projectDocsMap;
+        }
+
+        /// <summary>
+        /// build a new item list with the current set of open docs by project which
+        /// will be used to update the bound list.
+        /// </summary>
+        private List<ObservableItemBase> BuildNewItemList(Dictionary<string, List<DocFields>> projectDocsMap)
+        {
+            var newOpenDocList = new List<ObservableItemBase>();
+
             // get sorted list of project names (so the order is repeatable)
             var projectNames = projectDocsMap.Keys.ToList();
             projectNames.Sort();
 
-            // build the "new" list contents which will be used to update the existing list
-            var newOpenDocList = new List<ObservableItemBase>();
             foreach (var projectName in projectNames)
             {
                 // add a project item
@@ -256,6 +253,17 @@ namespace VSDocBar
                 }
             }
 
+            return newOpenDocList;
+        }
+
+        /// <summary>
+        /// do a "smart update" of the bound observable items list using a new
+        /// items list built from the current set of open docs.  the idea is to
+        /// only change what is necessary, vs. just clearing the list and re-populating it all
+        /// each time.
+        /// </summary>
+        private void UpdateObservableItemsList(List<ObservableItemBase> newOpenDocList)
+        {
             // remove excessive items from the current list
             while (OpenDocList.Count > newOpenDocList.Count)
             {
@@ -275,6 +283,38 @@ namespace VSDocBar
                     OpenDocList[i] = newOpenDocList[i];
                 }
             }
+        }
+
+        #endregion
+
+        private void RequestUpdate()
+        {
+            _updateRequestedRev++;
+        }
+
+        private void UpdateIfNeeded(object sender, EventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (!_active)
+                return;
+
+            // only update if there have been update requests since the last update
+            if (_updateExecutedRev == _updateRequestedRev)
+                return;
+            _updateExecutedRev = _updateRequestedRev;
+
+            // ensure font matches the code editor font
+            UpdateFont();
+
+            // get open docs by project
+            var projectDocsMap = GetOpenDocsByProject();
+
+            // build the "new" list contents which will be used to update the existing list
+            var newOpenDocList = BuildNewItemList(projectDocsMap);
+
+            // update bound observable list with the new list contents
+            UpdateObservableItemsList(newOpenDocList);
         }
 
         #endregion
