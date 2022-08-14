@@ -107,12 +107,30 @@ namespace VSDocBar
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            var openDoc = listItemData as ObservableOpenDoc;
-            if (openDoc == null)
-                return;
+            // close an individual file
+            if (listItemData is ObservableOpenDoc openDoc)
+            {
+                var docWindowFrame = openDoc.DF.GetDocWindowFrame(_sod, out var isOpen);
+                docWindowFrame?.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_PromptSave);
+            }
 
-            var docWindowFrame = openDoc.DF.GetDocWindowFrame(_sod, out var isOpen);
-            docWindowFrame?.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_PromptSave);
+            // close all files for a project
+            else if (listItemData is ObservableProject proj)
+            {
+                var docsByProj = GetOpenDocsByProject();
+
+                if (!docsByProj.Data.TryGetValue(proj.ProjectName, out var openDocsForProj))
+                    return;
+
+                if (!((openDocsForProj?.Count ?? 0) > 0))
+                    return;
+
+                foreach (var openDocForProj in openDocsForProj)
+                {
+                    var docWindowFrame = openDocForProj.GetDocWindowFrame(_sod, out var isOpen);
+                    docWindowFrame?.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_PromptSave);
+                }
+            }
         }
 
         #endregion
