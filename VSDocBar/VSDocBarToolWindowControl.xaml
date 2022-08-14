@@ -25,6 +25,7 @@
                     Background="{Binding BackgroundColor}"
                     Foreground="{Binding ForegroundColor}"
                     FontWeight="{Binding TextFontWeight}" 
+                    MouseDown="OpenDocItemMouseDown"
                     Click="OpenDocItemClick" />
             </Grid>
         </DataTemplate>
@@ -38,6 +39,7 @@
                 <Button Grid.Column="0" 
                         Content="{Binding FileName}" 
                         HorizontalContentAlignment="Left"
+                        MouseDown="OpenDocItemMouseDown"
                         Click="OpenDocItemClick"
                         Background="{Binding BackgroundColor}"
                         Foreground="{Binding ForegroundColor}"

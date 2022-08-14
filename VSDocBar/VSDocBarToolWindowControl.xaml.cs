@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -40,11 +41,36 @@ namespace VSDocBar
             _viewModel.Shutdown();
         }
 
+        private void OpenDocItemMouseDown(object sender, RoutedEventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (!(e is MouseButtonEventArgs mbe))
+                return;
+
+            // in order to get middle button events, need to handle mouse down, check
+            // for middle button but then otherwise allow it to be handled elsewhere
+            // by the button's normal click.  experimented with this somewhat and it
+            // seemed the only way to get both middle and left clicks on a button
+
+            if (mbe.ChangedButton == MouseButton.Middle)
+            {
+                // treat middle button on item the same as clicking the close button
+                _viewModel.OnDocCloseBtnClicked((sender as ContentControl)?.DataContext);
+
+                // we've already handled this
+                e.Handled = true;
+            }
+            else
+                // otherwise allow normal handling
+                e.Handled = false;
+        }
+
         private void OpenDocItemClick(object sender, RoutedEventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // handle a click on an item in the list (could be project or doc)
+            // left click selects the item (project or open doc)
             _viewModel.OnDocClicked((sender as ContentControl)?.DataContext);
         }
 
@@ -52,8 +78,9 @@ namespace VSDocBar
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // handle a click on the close button for a document
+            // click on the close button results in closing the doc
             _viewModel.OnDocCloseBtnClicked((sender as ContentControl)?.DataContext);
         }
     }
 }
+ 
